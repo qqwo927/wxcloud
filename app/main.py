@@ -1,20 +1,17 @@
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, File, UploadFile
 import os
-app= Flask(__name__)
+app = FastAPI()
+UPLOAD_FOLDER = 'uploads'
+# 确保上传文件夹存在
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+@app.post("/upload/")
+async def upload_file(file: UploadFile = File(...)):
+    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+    with open(filepath, "wb") as buffer:
+        buffer.write(await file.read())
+    return {"filename": file.filename}
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=80)
 
-uploadfolder='uploads/'
-if not os.path.exists(uploadfolder):
-    os.makedirs(uploadfolder)
-
-@app.route('/upload',methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({'error':'No file part'})
-    file = request.files['file']
-
-    if file.filename == '':
-        return jsonify({'error':'No selected file'})
-    file.save(os.path.join(upload_file,file.filename))
-    return jsonify({'message':'File uploaded','filename':file.filename})
-if __name__ =='__main__':
-    app.run(debug=True)
